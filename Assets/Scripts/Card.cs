@@ -9,19 +9,25 @@ public class Card : MonoBehaviour
     [SerializeField] float rotationSpeed;
     Sprite frontImage;
     Sprite backImage;
+    private int id;
+    Animator animator;
+
+    public int Id
+    {
+        get {return id;}
+    }
 
     private void Awake()
     {
         backImage = Resources.Load<Sprite>("images/CardBack");
+        animator = GetComponent<Animator>();
     }
 
-    void Start()
-    {
-    }
 
-    public void Init(Sprite sprite)
+    public void Init(Sprite sprite, int _id)
     {
         frontImage = sprite;
+        id = _id;
     }
 
     void Update()
@@ -35,7 +41,6 @@ public class Card : MonoBehaviour
     public void FlipCard()
     {
         flipped = !flipped;
-        Debug.Log(gameObject.name + " flipped, current value: " + flipped);
         StartCoroutine("RotateCard");
     }
 
@@ -52,8 +57,8 @@ public class Card : MonoBehaviour
             yRotation += deltaRot;
             if (yRotation >= 90.0f && spriteToggled == false)
             {
-                ToggleSprite();
                 spriteToggled = true;
+                ToggleSprite();
             }
             if (yRotation > 180.0f)
             {
@@ -80,5 +85,25 @@ public class Card : MonoBehaviour
             spriteR.sprite = backImage;
         }
         spriteR.flipX = !spriteR.flipX;
+    }
+
+    public bool IsFlipped()
+    {
+        return flipped;
+    }
+
+    public void SetPosition(Vector2 pos)
+    {
+
+    }
+
+    public void Discard()
+    {
+        animator.SetTrigger("Destroy");
+    }
+
+    void DestroySelf()
+    {
+        Destroy(gameObject); 
     }
 }
