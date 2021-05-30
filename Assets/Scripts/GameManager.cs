@@ -4,6 +4,30 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    public class Difficulty
+    {
+        public Difficulty(int rowVal, int colVal)
+        {
+            rows_ = rowVal;
+            columns_ = colVal;
+        }
+        int rows_;
+        int columns_;
+        public int numberOfPairs
+        {
+            get { return (rows_ * columns_) / 2; }
+        }
+        public int rows
+        {
+            get { return rows_; }
+        }
+
+        public int columns
+        {
+            get { return columns_; }
+        }
+    }
+
     [SerializeField] GameObject cardPrefab;
     [SerializeField] AudioClip cardFlippedSound;
     [SerializeField] AudioClip wrongSound;
@@ -18,8 +42,9 @@ public class GameManager : MonoBehaviour
     Card cardOne = null;
     Card cardTwo = null;
     List<Sprite> sprites;
+    Difficulty difficulty;
     public static GameManager Instance { get { return _instance; } }
-    string[] imageFileNames = { "Card01", "Card02", "Card03", "Card04", "Card05", "Card06", "Card07", "Card08" };
+    string[] imageFileNames = { "Card01", "Card02", "Card03", "Card04", "Card05", "Card06", "Card07", "Card08", "Card09", "Card10" };
 
     private void Awake()
     {
@@ -35,12 +60,14 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        // debug - this needs to be loaded later from menu
+        difficulty = new Difficulty(2, 5);
+        numberOfPairs = difficulty.numberOfPairs;
         audioSource = GetComponent<AudioSource>();
         Debug.Assert(audioSource != null);
         Debug.Assert(cardFlippedSound);
         Debug.Assert(wrongSound);
         Debug.Assert(rightSound);
-        numberOfPairs = 3;
         LoadSprites();
         SetUpCards();
     }
@@ -113,19 +140,39 @@ public class GameManager : MonoBehaviour
     private void SetUpCards()
     {
         pairsLeft = numberOfPairs;
-        // Debug.Log(Screen.width + "  " + Screen.height);
-        // Debug.Log("Aspect Ratio: " + Camera.main.aspect);
-        // Debug.Log("Viewport w: " + Camera.main.aspect * Camera.main.orthographicSize);
-        //setup  Camera.main.orthographicSize according to screen ratio etc.
         int[] pool = CreatePool();
-        int x = 3;
-        int y = 2;
+
+        int x;
+        int y;
+
+        //determine if cards should be layout vertically or horizontally
+        if(Camera.main.aspect < 1)
+        {
+        x = Mathf.Min(difficulty.rows,difficulty.columns);
+        y = Mathf.Max(difficulty.rows,difficulty.columns);
+        }
+        else
+        {
+        x = Mathf.Max(difficulty.rows,difficulty.columns);
+        y = Mathf.Min(difficulty.rows,difficulty.columns);
+        }
+
+        //calculate both minimal orthographicSize for x and y axis and choose the bigger one to fit all cards
+        float camSizeX = 0.75f * x / Camera.main.aspect;
+        float camSizeY = 0.75f * y;
+        Camera.main.orthographicSize = Mathf.Max(camSizeX, camSizeY);
+
+        // calculate the positions of the first cards 
+        float x0 = -0.75f * (x - 1);
+        float y0 = -0.75f * (y - 1);
+
+        //iterate over the cards, instantiate and position them
         for (int i = 0; i < x; i++)
         {
             for (int j = 0; j < y; j++)
             {
-                float xPos = -1.5f + 1.5f * (float)i;
-                float yPos = 4f - 1.5f * (float)j;
+                float xPos = x0 + 1.5f * (float)i;
+                float yPos = y0 + 1.5f * (float)j;
                 Vector3 pos = new Vector3(xPos, yPos, 0.0f);
                 Card newCard = InstantiateCard(pos, pool[i + j * x]);
             }
@@ -212,7 +259,7 @@ public class GameManager : MonoBehaviour
         yield return null;
     }
 
-    public void OnGameOver() 
+    public void OnGameOver()
     {
         Debug.Log("GAME WON");
     }
