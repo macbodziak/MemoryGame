@@ -41,36 +41,7 @@ public class Card : MonoBehaviour
     public void FlipCard()
     {
         flipped = !flipped;
-        StartCoroutine("RotateCard");
-    }
-
-    IEnumerator RotateCard()
-    {
-        Transform tran = gameObject.transform;
-        float yRotation = 0.0f;
-        float deltaRot;
-        bool spriteToggled = false;
-        isRotating = true;
-        do
-        {
-            deltaRot = 1.0f * rotationSpeed * Time.deltaTime;
-            yRotation += deltaRot;
-            if (yRotation >= 90.0f && spriteToggled == false)
-            {
-                spriteToggled = true;
-                ToggleSprite();
-            }
-            if (yRotation > 180.0f)
-            {
-                deltaRot = 180.0f - tran.rotation.eulerAngles.y % 180.0f;
-            }
-            tran.Rotate(0.0f, deltaRot, 0.0f, Space.Self);
-
-            yield return null;
-        }
-        while (yRotation < 180.0f);
-        isRotating = false;
-        yield return null;
+        animator.SetTrigger("Flip");
     }
 
     void ToggleSprite()
@@ -84,7 +55,6 @@ public class Card : MonoBehaviour
         {
             spriteR.sprite = backImage;
         }
-        spriteR.flipX = !spriteR.flipX;
     }
 
     public bool IsFlipped()
@@ -105,5 +75,10 @@ public class Card : MonoBehaviour
     void DestroySelf()
     {
         Destroy(gameObject); 
+    }
+
+    void OnEndFlipAnimation()
+    {
+        isRotating = false;
     }
 }

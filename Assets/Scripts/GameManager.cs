@@ -42,9 +42,8 @@ public class GameManager : MonoBehaviour
     Card cardOne = null;
     Card cardTwo = null;
     List<Sprite> sprites;
-    Difficulty difficulty;
     public static GameManager Instance { get { return _instance; } }
-    string[] imageFileNames = { "Card01", "Card02", "Card03", "Card04", "Card05", "Card06", "Card07", "Card08", "Card09", "Card10" };
+    string[] imageFileNames = { "Card01", "Card02", "Card03", "Card04", "Card05", "Card06", "Card07", "Card08", "Card09", "Card10","Card11", "Card12", "Card13", "Card14" };
 
     private void Awake()
     {
@@ -60,16 +59,18 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        // debug - this needs to be loaded later from menu
-        difficulty = new Difficulty(2, 5);
-        numberOfPairs = difficulty.numberOfPairs;
         audioSource = GetComponent<AudioSource>();
         Debug.Assert(audioSource != null);
         Debug.Assert(cardFlippedSound);
         Debug.Assert(wrongSound);
         Debug.Assert(rightSound);
+    }
+
+    public void StartNewGame(Difficulty difficulty)
+    {
+        numberOfPairs = difficulty.numberOfPairs;
         LoadSprites();
-        SetUpCards();
+        SetUpCards(difficulty);
     }
 
     private void Update()
@@ -106,7 +107,7 @@ public class GameManager : MonoBehaviour
         {
             cardTwo = card;
             inputBlocked = true;
-            //check match
+
             if (IsMatch())
             {
                 StartCoroutine("DiscardCardsOnMatch");
@@ -137,7 +138,7 @@ public class GameManager : MonoBehaviour
         yield return null;
     }
 
-    private void SetUpCards()
+    private void SetUpCards(Difficulty difficulty)
     {
         pairsLeft = numberOfPairs;
         int[] pool = CreatePool();
@@ -259,8 +260,18 @@ public class GameManager : MonoBehaviour
         yield return null;
     }
 
+    void CleanUp()
+    {
+        sprites.Clear();
+        inputBlocked = false;
+        pairsLeft = 0;
+        cardsFlipped = 0;
+        numberOfPairs = 0;
+    }
+
     public void OnGameOver()
     {
+        CleanUp();
         Debug.Log("GAME WON");
     }
 }
