@@ -178,6 +178,7 @@ public class GameManager : MonoBehaviour
                 Card newCard = InstantiateCard(pos, pool[i + j * x]);
             }
         }
+        sprites.Clear();
     }
 
     private Card InstantiateCard(Vector3 pos, int id)
@@ -273,5 +274,13 @@ public class GameManager : MonoBehaviour
     {
         CleanUp();
         Debug.Log("GAME WON");
+        StartCoroutine("DelayedGameOverScreen",2.5f);
+    }
+
+    IEnumerator DelayedGameOverScreen(float t)
+    {
+        yield return new WaitForSeconds(t);
+        MenuManager.Instance.OnGameOver();
+        yield return null;
     }
 }
