@@ -7,6 +7,9 @@ public class MenuManager : MonoBehaviour
 {
     [SerializeField] GameObject mainMenuScreen;
     [SerializeField] GameObject gameOverScreen;
+    [SerializeField] GameObject gameScreen;
+    [SerializeField]  Text ingameScoreText;
+    [SerializeField]  Text gameoverScoreText;
     [SerializeField] float fadeSpeed;
     private static MenuManager _instance;
     GameObject currentScreen;
@@ -48,11 +51,9 @@ public class MenuManager : MonoBehaviour
 
         if (currentScreen != null)
         {
-
             cg = currentScreen.GetComponent<CanvasGroup>();
-            iv = 0.0f;
-
             cg.interactable = false;
+            iv = 0.0f;
 
             while (iv <= 1.0f)
             {
@@ -92,12 +93,23 @@ public class MenuManager : MonoBehaviour
             yield return null;
         }
         currentScreen.SetActive(false);
+
+        gameScreen.SetActive(true);
+        cg = gameScreen.GetComponent<CanvasGroup>();
+        cg.alpha = 1.0f;
+        cg.interactable = true;
+        ingameScoreText.text = "0";
         GameManager.Instance.StartNewGame(difficulty);
+        currentScreen = gameScreen;
+        // TransitionToNewGameScreen(gameScreen);
+        // scoreText.text = "0";
+        // GameManager.Instance.StartNewGame(difficulty);
         yield return null;
     }
 
     IEnumerator FadInOnGameOver()
     {
+        gameScreen.SetActive(false);
         currentScreen = gameOverScreen;
         currentScreen.SetActive(true);
         CanvasGroup cg = currentScreen.GetComponent<CanvasGroup>();
@@ -135,5 +147,16 @@ public class MenuManager : MonoBehaviour
     public void OnGameOver()
     {
         StartCoroutine("FadInOnGameOver");
+    }
+
+    public void OnAbortGame()
+    {
+        TransitionToNewGameScreen(mainMenuScreen);
+    }
+
+    public void UpdateScore(int score)
+    {
+        ingameScoreText.text = score.ToString();
+        gameoverScoreText.text = "Moves " + score.ToString();
     }
 }

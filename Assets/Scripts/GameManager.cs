@@ -32,18 +32,21 @@ public class GameManager : MonoBehaviour
     [SerializeField] AudioClip cardFlippedSound;
     [SerializeField] AudioClip wrongSound;
     [SerializeField] AudioClip rightSound;
+    [SerializeField] AudioClip gameOverSound;
     AudioSource audioSource;
     private static GameManager _instance;
     private int cardsFlipped = 0;
     private int numberOfPairs;
     private int pairsLeft;
+    private int score = 0;
     bool inputBlocked = false;
     [SerializeField] float delay;
     Card cardOne = null;
     Card cardTwo = null;
     List<Sprite> sprites;
+    List<Card> cards;
     public static GameManager Instance { get { return _instance; } }
-    string[] imageFileNames = { "Card01", "Card02", "Card03", "Card04", "Card05", "Card06", "Card07", "Card08", "Card09", "Card10","Card11", "Card12", "Card13", "Card14" };
+    string[] imageFileNames = { "Card01", "Card02", "Card03", "Card04", "Card05", "Card06", "Card07", "Card08", "Card09", "Card10", "Card11", "Card12", "Card13", "Card14" };
 
     private void Awake()
     {
@@ -54,6 +57,8 @@ public class GameManager : MonoBehaviour
         else
         {
             _instance = this;
+            sprites = new List<Sprite>();
+            cards = new List<Card>();
         }
     }
 
@@ -64,6 +69,7 @@ public class GameManager : MonoBehaviour
         Debug.Assert(cardFlippedSound);
         Debug.Assert(wrongSound);
         Debug.Assert(rightSound);
+        Debug.Assert(gameOverSound);
     }
 
     public void StartNewGame(Difficulty difficulty)
@@ -107,15 +113,12 @@ public class GameManager : MonoBehaviour
         {
             cardTwo = card;
             inputBlocked = true;
+            score++;
+            MenuManager.Instance.UpdateScore(score);
 
             if (IsMatch())
             {
-                StartCoroutine("DiscardCardsOnMatch");
-                pairsLeft--;
-                if (pairsLeft == 0)
-                {
-                    OnGameOver();
-                }
+                OnMatch();
             }
             else
             {
@@ -147,20 +150,24 @@ public class GameManager : MonoBehaviour
         int y;
 
         //determine if cards should be layout vertically or horizontally
-        if(Camera.main.aspect < 1)
+        if (Camera.main.aspect < 1)
         {
-        x = Mathf.Min(difficulty.rows,difficulty.columns);
-        y = Mathf.Max(difficulty.rows,difficulty.columns);
+            //vertical layout
+            x = Mathf.Min(difficulty.rows, difficulty.columns);
+            y = Mathf.Max(difficulty.rows, difficulty.columns);
         }
         else
         {
-        x = Mathf.Max(difficulty.rows,difficulty.columns);
-        y = Mathf.Min(difficulty.rows,difficulty.columns);
+            //horizontal layout
+            x = Mathf.Max(difficulty.rows, difficulty.columns);
+            y = Mathf.Min(difficulty.rows, difficulty.columns);
         }
 
         //calculate both minimal orthographicSize for x and y axis and choose the bigger one to fit all cards
+        // (1 + 240f / Screen.height) takes into account the buffer of 120px for the ui to display score 
+        // camsizeY + 120px * 2 * camsizeY /screenheight
         float camSizeX = 0.75f * x / Camera.main.aspect;
-        float camSizeY = 0.75f * y;
+        float camSizeY = 0.75f * y * (1 + 240f / Screen.height);
         Camera.main.orthographicSize = Mathf.Max(camSizeX, camSizeY);
 
         // calculate the positions of the first cards 
@@ -176,6 +183,7 @@ public class GameManager : MonoBehaviour
                 float yPos = y0 + 1.5f * (float)j;
                 Vector3 pos = new Vector3(xPos, yPos, 0.0f);
                 Card newCard = InstantiateCard(pos, pool[i + j * x]);
+                cards.Add(newCard);
             }
         }
         sprites.Clear();
@@ -252,6 +260,8 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(delay);
         cardOne.Discard();
         cardTwo.Discard();
+        cards.Remove(cardOne);
+        cards.Remove(cardTwo);
         audioSource.Stop();
         audioSource.clip = rightSound;
         audioSource.Play();
@@ -261,26 +271,59 @@ public class GameManager : MonoBehaviour
         yield return null;
     }
 
-    void CleanUp()
+    public void CleanUp()
     {
         sprites.Clear();
         inputBlocked = false;
         pairsLeft = 0;
         cardsFlipped = 0;
         numberOfPairs = 0;
+        score = 0;
     }
 
     public void OnGameOver()
     {
         CleanUp();
         Debug.Log("GAME WON");
-        StartCoroutine("DelayedGameOverScreen",2.5f);
+        StartCoroutine("DelayedGameOverScreen", 2.5f);
     }
 
     IEnumerator DelayedGameOverScreen(float t)
     {
         yield return new WaitForSeconds(t);
+        audioSource.Stop();
+        audioSource.clip = gameOverSound;
+        audioSource.Play();
         MenuManager.Instance.OnGameOver();
         yield return null;
+    }
+
+    void OnMatch()
+    {
+        StartCoroutine("DiscardCardsOnMatch");
+        pairsLeft--;
+        if (pairsLeft == 0)
+        {
+            OnGameOver();
+        }
+    }
+
+    void DestroyAllCards()
+    {
+        foreach (Card card in cards)
+        {
+            if (card != null)
+            {
+                Destroy(card.gameObject);
+            }
+        }
+        cards.Clear();
+    }
+
+    public void AbortGame()
+    {
+        DestroyAllCards();
+        CleanUp();
+        MenuManager.Instance.OnAbortGame();
     }
 }
