@@ -33,6 +33,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] AudioClip wrongSound;
     [SerializeField] AudioClip rightSound;
     [SerializeField] AudioClip gameOverSound;
+    [SerializeField] BackgroundManager background;
     AudioSource audioSource;
     private static GameManager _instance;
     private int cardsFlipped = 0;
@@ -169,7 +170,7 @@ public class GameManager : MonoBehaviour
         float camSizeX = 0.75f * x / Camera.main.aspect;
         float camSizeY = 0.75f * y * (1 + 240f / Screen.height);
         Camera.main.orthographicSize = Mathf.Max(camSizeX, camSizeY);
-
+        background.AdjustSize();
         // calculate the positions of the first cards 
         float x0 = -0.75f * (x - 1);
         float y0 = -0.75f * (y - 1);
